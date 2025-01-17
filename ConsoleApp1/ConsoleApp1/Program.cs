@@ -44,7 +44,7 @@ public class Warehouse : IWarehouse
         return true;
     }
 
-    public void AddNewGood(Good good, int quantity)
+    public void Delive(Good good, int quantity)
     {
         if (_goods.ContainsKey(good))
         {
@@ -83,7 +83,6 @@ public class Shop
 
 public class Cart
 {
-    private readonly OrderLink _order;
     private IWarehouse _warehouse;
     private Dictionary<Good, int> _goods;
 
@@ -94,18 +93,17 @@ public class Cart
 
         _goods = new Dictionary<Good, int>();
         _warehouse = warehouse;
-        _order = new OrderLink();
     }
 
     public void Add(Good good, int count)
     {
-        if (_warehouse.Contains(good, count) == false)
-            throw new NullReferenceException();
+        int currentGoodInCart = _goods.TryGetValue(good, out var value) ? value : 0;
+        int totalNeeded = currentGoodInCart + count;
 
-        if (_goods.ContainsKey(good))
-            _goods[good] += count;
-        else
-            _goods[good] = count;
+        if (!_warehouse.Contains(good, totalNeeded))
+            throw new InvalidOperationException();
+
+        _goods[good] = totalNeeded;
     }
 
     public void BuyProduct()
@@ -116,7 +114,7 @@ public class Cart
         _goods.Clear();
     }
 
-    public void ShowGoodsShopping()
+    public void ShowGoods()
     {
         if (_goods.Count == 0)
             throw new NullReferenceException("Корзина пуста.");
@@ -125,8 +123,13 @@ public class Cart
             Console.WriteLine($"Наименование: {item.Key.Name}; Количество: {item.Value}");
     }
 
-    public OrderLink Order() =>
-       _order;
+    public OrderLink Order()
+    {
+        BuyProduct();
+
+        return new OrderLink();
+    }
+
 }
 
 public class OrderLink
